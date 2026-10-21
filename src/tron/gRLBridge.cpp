@@ -449,12 +449,13 @@ bool Exchange( eGrid * grid, char const * type, REAL time )
     return ApplyReply( reply );
 }
 
-bool AnySteeredAlive()
+// with nothing steered (RL_BRIDGE_TEAMS 0) the trainer only observes, so any cycle counts
+bool AnyRelevantAlive()
 {
     for ( int i = se_PlayerNetIDs.Len() - 1; i >= 0; --i )
     {
         ePlayerNetID * player = se_PlayerNetIDs( i );
-        if ( IsSteered( player ) && player->Object() && player->Object()->Alive() )
+        if ( ( sg_rlTeams == 0 || IsSteered( player ) ) && player->Object() && player->Object()->Alive() )
             return true;
     }
     return false;
@@ -500,7 +501,7 @@ void gRLBridge::Timestep( eGrid * grid, REAL time )
     }
     else
     {
-        if ( winner != 0 || !AnySteeredAlive() )
+        if ( winner != 0 || !AnyRelevantAlive() )
             return;
         state.roundActive = true;
         state.round++;

@@ -12,7 +12,7 @@ Implementation: `src/tron/gRLBridge.cpp` (server), `rl/fortrl/server.py` (traine
 | Setting | Default | Meaning |
 |---|---|---|
 | `RL_BRIDGE_SOCKET` | empty (off) | socket path to connect to |
-| `RL_BRIDGE_TEAMS` | 1 | AI players on teams with id `< n` are steered by the trainer; the rest keep the built-in AI. Negative: every AI player is steered |
+| `RL_BRIDGE_TEAMS` | 1 | AI players on teams with id `< n` are steered by the trainer; the rest keep the built-in AI. Negative: every AI player is steered. 0: nothing is steered, the trainer only observes |
 | `RL_DECISION_INTERVAL` | 0.1 | game seconds between decisions |
 | `RL_RAYS` | 16 | wall sensor rays per steered cycle, evenly spread, ray 0 straight ahead, counter-clockwise |
 | `RL_RAY_RANGE` | 250 | sensor range |
