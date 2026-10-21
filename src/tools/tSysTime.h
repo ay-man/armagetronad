@@ -32,6 +32,7 @@ bool tTimerIsAccurate();                      //! returns true if a timer with m
 double tSysTimeFloat();                       //! returns the current frame's time ( from the playback )
 double tRealSysTimeFloat();                   //! returns the current frame's time ( from the real system )
 void tAdvanceFrame( int usecdelay = 0);       //! andvances one frame: updates the system time
+bool tTimeIsVirtual();                        //! returns true if SIMULATION_FIXED_STEP decouples frame time from real time
 void tDelay( int usecdelay );                 //! delays for the specified number of microseconds
 void tDelayForce( int usecdelay );            //! delays for the specified number of microseconds, even when playing back
 void tMockAdvanceFrame(double seconds);       //! for automated tests: pretend the given number of seconds passed

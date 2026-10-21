@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ArmageTron_zFortress_H
 
 #include "zone/zZone.h"
+#include "gRLBridge.h"
 
 #include <vector>
 
@@ -47,6 +48,9 @@ public:
 
     void setupVisuals(gParser::State_t &);
     void readXML(tXmlParser::node const &);
+
+    //! appends the state of all fortress zones of the grid (for gRLBridge observations)
+    static void ReportToRLBridge( eGrid const * grid, std::vector< gRLBridge::ZoneInfo > & zones );
 
 private:
     virtual bool Timestep(REAL currentTime);     //!< simulates behaviour up to currentTime

@@ -83,12 +83,11 @@ gSimpleAIFactory *gSimpleAIFactory::factory_ = NULL;
 
 gSimpleAI::~gSimpleAI()
 {
-    con << "simple AI destroyed.\n";
 }
 
 gSimpleAI * gSimpleAIFactory::Create( gCycle * object ) const
 {
-    gSimpleAI * ai = DoCreate();
+    gSimpleAI * ai = DoCreate( object );
     if ( ai )
         ai->SetObject( object );
     return ai;

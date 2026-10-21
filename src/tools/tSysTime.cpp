@@ -442,10 +442,19 @@ void tMockAdvanceFrame(double seconds)
     tAdvanceFrame();
 }
 
+// if positive, every frame advances the clock by exactly this many seconds, regardless of real time
+static REAL st_fixedFrameStep = 0;
+static tSettingItem< REAL > st_fixedFrameStepConf( "SIMULATION_FIXED_STEP", st_fixedFrameStep );
+
+bool tTimeIsVirtual()
+{
+    return st_fixedFrameStep > 0;
+}
+
 void tAdvanceFrame( int usecdelay )
 {
     // delay a bit if we're not playing back
-    if ( usecdelay > 0 )
+    if ( usecdelay > 0 && !tTimeIsVirtual() )
         tDelay( usecdelay );
 
     static tTime timeNewRelative;
@@ -486,7 +495,18 @@ void tAdvanceFrame( int usecdelay )
         }
 #endif
 
-        if( !tRecorder::IsPlayingBack() )
+        if( tTimeIsVirtual() )
+        {
+            tTime step;
+            step.seconds = 0;
+            step.microseconds = int( st_fixedFrameStep * 1000000 );
+            step.Normalize();
+            timeRelative = timeRelative + step;
+
+            // keep the transition back to real time smooth
+            timeStart = timeStart + timeNewRelative - timeRelative;
+        }
+        else if( !tRecorder::IsPlayingBack() )
         {
             // timeAdvance = timeRealRelative - timeRelative;
             timeRelative = timeNewRelative;

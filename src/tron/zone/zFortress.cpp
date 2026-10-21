@@ -46,6 +46,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "zone/zFortress.h"
 #include "zone/zZone.h"
+#include "zone/zShape.h"
+#include "gRLBridge.h"
 
 #include <time.h>
 #include <algorithm>
@@ -812,3 +814,33 @@ void zFortressZone::OnInside( gCycle * target, REAL time )
 }
 
 static zZoneExtRegistration regFortress("fortress", "", zFortressZone::create);
+
+void zFortressZone::ReportToRLBridge( eGrid const * grid, std::vector< gRLBridge::ZoneInfo > & zones )
+{
+    const tList<eGameObject>& gameObjects = grid->GameObjects();
+    for ( int i = 0; i < gameObjects.Len(); ++i )
+    {
+        zFortressZone * zone = dynamic_cast< zFortressZone * >( gameObjects( i ) );
+        if ( !zone || !zone->shape )
+            continue;
+
+        gRLBridge::ZoneInfo info;
+        info.team = zone->team ? zone->team->TeamID() : -1;
+        tCoord pos = zone->shape->Position();
+        info.x = pos.x;
+        info.y = pos.y;
+        zShapeCircle const * circle = dynamic_cast< zShapeCircle const * >( &*zone->shape );
+        info.radius = circle ? circle->GetEffectiveRadius() : 0;
+        info.conquered = zone->conquered_ < 1 ? zone->conquered_ : 1;
+        info.safe = zone->currentState_ == State_Safe;
+        zones.push_back( info );
+    }
+}
+
+static struct zFortressRLRegistration
+{
+    zFortressRLRegistration()
+    {
+        gRLBridge::RegisterZoneReporter( &zFortressZone::ReportToRLBridge );
+    }
+} sz_fortressRLRegistration;

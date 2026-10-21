@@ -164,6 +164,7 @@ public :
     REAL calcBoundSq();
 
     void setRadius(tFunction radius) {this->radius = radius;};
+    REAL GetEffectiveRadius() const; //!< radius including the current scale
     
     void setGrowth(REAL growth);
 protected:

@@ -118,7 +118,7 @@ int sn_defaultDelay=10000;
 //! pause a bit, abort pause on network activity
 void sn_Delay()
 {
-    sn_BasicNetworkSystem.Select( sn_defaultDelay / 1000000.0 );
+    sn_BasicNetworkSystem.Select( tTimeIsVirtual() ? 0 : sn_defaultDelay / 1000000.0 );
     tAdvanceFrame();
 }
 

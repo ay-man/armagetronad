@@ -230,9 +230,16 @@ eLadderLogWriter::~eLadderLogWriter()
 static bool se_ladderlogDecorateTS = false;
 static tSettingItem< bool > se_ladderlogDecorateTSConf( "LADDERLOG_DECORATE_TIMESTAMP", se_ladderlogDecorateTS );
 
+eLadderLogWriter::Listener eLadderLogWriter::s_listener = NULL;
+
 void eLadderLogWriter::write()
 {
-    if( isEnabled() && sn_GetNetState() != nCLIENT && !tRecorder::IsPlayingBack() )
+    if( s_listener && sn_GetNetState() != nCLIENT && !tRecorder::IsPlayingBack() )
+    {
+        s_listener( std::string( cache_ ) );
+    }
+
+    if( ( isEnabledForFile_ || isEnabledForScript_ ) && sn_GetNetState() != nCLIENT && !tRecorder::IsPlayingBack() )
     {
 #ifdef DEBUG
         EnsureConsistent();

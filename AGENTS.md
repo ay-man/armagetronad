@@ -57,6 +57,7 @@ The game features single-player mode with AI opponents, multiplayer client-serve
 ├── MacOS/                       # macOS project files (Xcode)
 ├── win32/                       # Windows-specific code and resources
 ├── www-root/                    # Web server root files
+├── rl/                          # Reinforcement learning trainer for Fortress bots (Python, see rl/AGENTS.md)
 └── src/                         # Main source code
 ```
 

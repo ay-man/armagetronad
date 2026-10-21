@@ -463,6 +463,11 @@ void zShapeCircle::applyVisuals( gParserState & state ) {
         setRadius( state.get<tFunction>("radius") );
 }
 
+REAL zShapeCircle::GetEffectiveRadius() const
+{
+    return scale_.Evaluate(lasttime_ - referencetime_) * radius.Evaluate(lasttime_ - referencetime_);
+}
+
 bool zShapeCircle::isInteracting(eGameObject * target)
 {
     // NOTE: FIXME: TODO: cache effectiveRadius*effectiveRadius for speed comparable to zones v1
@@ -473,8 +478,7 @@ bool zShapeCircle::isInteracting(eGameObject * target)
     {
         if ( prey->Player() && prey->Alive() )
         {
-            REAL effectiveRadius;
-            effectiveRadius = scale_.Evaluate(lasttime_ - referencetime_) * radius.Evaluate(lasttime_ - referencetime_);
+            REAL effectiveRadius = GetEffectiveRadius();
             // Is the player inside or outside the zone
             if ( (effectiveRadius >= 0.0) && ( prey->Position() - Position() ).NormSquared() < effectiveRadius*effectiveRadius )
             {

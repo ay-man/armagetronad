@@ -33,6 +33,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "tConfiguration.h"
 #include "tString.h"
 #include <set>
+#include <string>
 
 //! create a global instance of this to write stuff to ladderlog.txt
 class eLadderLogWriter
@@ -90,9 +91,14 @@ public:
     //!< check this if you're going to make expensive calculations for ladderlog output
     bool isEnabled() const
     {
-        return isEnabledForFile_ || isEnabledForScript_;
+        return isEnabledForFile_ || isEnabledForScript_ || s_listener;
     }
+
+    //! receives every ladderlog line (without trailing newline), whether or not file/script output is enabled
+    typedef void (*Listener)( std::string const & line );
+    static void SetListener( Listener listener ){ s_listener = listener; }
 private:
+    static Listener s_listener;
 #ifdef DEBUG
     void EnsureConsistent() const;
 #endif

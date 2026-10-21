@@ -76,6 +76,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "eVoter.h"
 #include "tRecorder.h"
 #include "gStatistics.h"
+#include "gRLBridge.h"
 #include "nProtoBuf.h"
 
 #include "tXmlParser.h"
@@ -800,6 +801,20 @@ static REAL lastTimeTimestep=0;
 static int wishWinner = 0;
 static char const * wishWinnerMessage = "";
 
+// team id of the legitimate round winner, -1 if none (yet)
+static int sg_roundWinnerTeam = -1;
+
+int sg_RoundWinner()
+{
+    if ( winner == 0 )
+        return 0;
+    return sg_roundWinnerTeam >= 0 ? sg_roundWinnerTeam + 1 : -1;
+}
+
+// lets a dedicated server play rounds with nobody connected (AI training)
+static bool sg_aiOnlyGames = false;
+static tSettingItem< bool > sg_aiOnlyGamesConf( "DEDICATED_AI_ONLY_GAMES", sg_aiOnlyGames );
+
 void sg_DeclareWinner( eTeam* team, char const * message )
 {
     if ( team && !winner && !wishWinner )
@@ -943,6 +958,7 @@ void init_game_grid(eGrid *grid, gParser *aParser){
     }
 
     absolute_winner=winner=wishWinner=0;
+    sg_roundWinnerTeam = -1;
 }
 
 int sg_NumHumans()
@@ -962,6 +978,8 @@ int sg_NumUsers()
 {
     // return se_PlayerNetIDs.Len() ;
 #ifdef DEDICATED
+    if ( sg_aiOnlyGames && sn_NumUsers() <= 0 )
+        return 1;
     return sn_NumUsers();
 #else
     return sn_NumUsers() + 1;
@@ -995,7 +1013,7 @@ void update_settings( bool const * goon )
             bool restarted = false;
 
             REAL timeout = tSysTimeFloat() + 3.0f;
-            while ( sg_NumHumans() <= 0 && sg_NumUsers() > 0 && ( !goon || *goon ) && uMenu::quickexit == uMenu::QuickExit_Off )
+            while ( !sg_aiOnlyGames && sg_NumHumans() <= 0 && sg_NumUsers() > 0 && ( !goon || *goon ) && uMenu::quickexit == uMenu::QuickExit_Off )
             {
                 if ( !restarted && bool(sg_currentGame) )
                 {
@@ -1377,6 +1395,8 @@ void s_Timestep(eGrid *grid, REAL time,bool cam){
             if (ai && think)
                 ai->Timestep(time);
         }
+
+        gRLBridge::Timestep( grid, time );
     }
 
     lastTimeTimestep=time;
@@ -4041,6 +4061,7 @@ void gGame::Analysis(REAL time){
                             se_SaveToScoreFile(message);
                         }
 
+                        sg_roundWinnerTeam = winner-1;
                         sg_roundWinnerWriter << eTeam::teams[winner-1]->GetLogName();
                         eTeam::WritePlayers( sg_roundWinnerWriter, eTeam::teams[winner-1] );
                         sg_roundWinnerWriter.write();
@@ -4298,7 +4319,7 @@ void gGame::Analysis(REAL time){
     }
 
     if (( ( winner || absolute_winner ) && wintimer+fintime < time)
-            || (((alive==0 && eTeam::teams.Len()>=
+            || (((alive==0 && !( sg_aiOnlyGames && ai_alive > 0 ) && eTeam::teams.Len()>=
 #ifndef DEDICATED
                   1
 #else
@@ -4778,7 +4799,8 @@ bool gGame::GameLoop(bool input){
             rSysDep::SwapGL();
         }
 #endif
-        tDelay( 10000 );
+        if ( !tTimeIsVirtual() )
+            tDelay( 10000 );
         return goon;
     }
 }
@@ -4902,7 +4924,7 @@ void sg_EnterGameCore( nNetState enter_state ){
 #ifdef DEDICATED // read input
         sr_Read_stdin();
 
-        if ( sn_BasicNetworkSystem.Select( 1.0 / ( sg_dedicatedFPSIdleFactor * sg_dedicatedFPS )  ) )
+        if ( sn_BasicNetworkSystem.Select( tTimeIsVirtual() ? 0 : 1.0 / ( sg_dedicatedFPSIdleFactor * sg_dedicatedFPS )  ) )
         {
             // new network data arrived, do the most urgent work now
             tAdvanceFrame();

@@ -86,7 +86,7 @@ public:
     static gSimpleAIFactory * Get();
     static void Set( gSimpleAIFactory * factory );
 protected:
-    virtual gSimpleAI * DoCreate() const = 0;
+    virtual gSimpleAI * DoCreate( gCycle * object ) const = 0; //!< may return NULL to keep the built-in AI
 private:
     static gSimpleAIFactory *factory_;
 };
@@ -214,8 +214,8 @@ public:
 
     void ClearTarget(){target=NULL;}
 
-    virtual void ControlObject(eNetGameObject *c){ ePlayerNetID::ControlObject( c ); simpleAI_ = NULL; }
-    virtual void ClearObject(){ ePlayerNetID::ClearObject(); simpleAI_ = NULL; }
+    virtual void ControlObject(eNetGameObject *c){ ePlayerNetID::ControlObject( c ); delete simpleAI_; simpleAI_ = NULL; }
+    virtual void ClearObject(){ ePlayerNetID::ClearObject(); delete simpleAI_; simpleAI_ = NULL; }
 
     // do some thinking. Return value: time to think again
     virtual REAL Think();

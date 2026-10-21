@@ -67,8 +67,20 @@ The `gGame` class inherits from `nNetObject` for network synchronization. Game s
 ├── gFriends.cpp           # Friends list management
 ├── gFriends.h            # Friends list management header
 ├── gServerFavorites.cpp   # Server favorites
-└── gServerFavorites.h    # Server favorites header
+├── gServerFavorites.h    # Server favorites header
+├── gRLBridge.cpp         # Lockstep bridge for external RL trainers (see rl/PROTOCOL.md)
+└── gRLBridge.h           # RL bridge interface and zone reporter hook
 ```
+
+## RL Bridge
+
+`gRLBridge` lets an external trainer (`rl/`) steer AI players over a Unix socket. It is
+inactive unless `RL_BRIDGE_SOCKET` is set. It installs a `gSimpleAIFactory` whose puppet
+controllers silence the built-in AI of steered players, is called from `s_Timestep` after the
+AI players, and receives ladderlog lines through `eLadderLogWriter::SetListener`. Zone modules
+contribute observations via `gRLBridge::RegisterZoneReporter` (`zFortressZone` does).
+`DEDICATED_AI_ONLY_GAMES` (gGame.cpp) lets a dedicated server play rounds with no clients;
+`sg_RoundWinner()` exposes the round outcome.
 
 ## Technologies
 

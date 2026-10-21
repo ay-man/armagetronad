@@ -1,5 +1,6 @@
 #include "doctest.h"
 #include "tSysTime.h"
+#include "ConfItemTempValue.h"
 #include <cmath>
 #include "tMath.h"
 #include <tuple>
@@ -91,6 +92,26 @@ TEST_SUITE("tSysTime")
                 tDelayForce(100); // 100 microseconds
             }
         }
+    }
+}
+
+TEST_SUITE("tSysTime virtual clock")
+{
+    TEST_CASE("SIMULATION_FIXED_STEP decouples frame time from real time")
+    {
+        CHECK_FALSE(tTimeIsVirtual());
+
+        ConfItemTempValue<REAL> step{"SIMULATION_FIXED_STEP"};
+        step.SetValue(0.25);
+        REQUIRE(tTimeIsVirtual());
+
+        tAdvanceFrame();
+        double const start = tSysTimeFloat();
+        for (int i = 0; i < 8; ++i)
+            tAdvanceFrame();
+
+        // eight frames are exactly two seconds, no matter how long they really took
+        CHECK(tSysTimeFloat() - start == doctest::Approx(2.0).epsilon(1E-6));
     }
 }
 

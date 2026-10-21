@@ -74,7 +74,7 @@ Build produces `libtools.a` static library. Includes `defs.h` for global definit
 ├── tSafePTRBase.cpp       # Safe pointer base implementation
 ├── tString.cpp            # String class
 ├── tString.h             # String class header
-├── tSysTime.cpp           # System time
+├── tSysTime.cpp           # System time; SIMULATION_FIXED_STEP virtual clock (tTimeIsVirtual)
 ├── tSysTime.h            # System time header
 ├── tToDo.cpp              # TODO task management
 ├── tToDo.h               # TODO task management header
