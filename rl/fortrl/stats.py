@@ -40,6 +40,9 @@ def summarize(records):
         "death_rate": sum(r["died"] for r in records) / n,
         "kills": sum(r["kills"] for r in records) / n,
         "steps": float(np.mean([r["steps"] for r in records])),
+        # share of decisions that turn / hold the brake (the zig-zag habit)
+        "turn_rate": sum(r.get("turns", 0) for r in records) / max(1, sum(r["steps"] for r in records)),
+        "brake_rate": sum(r.get("brakes", 0) for r in records) / max(1, sum(r["steps"] for r in records)),
     }
     for k, v in sorted(parts.items()):
         out[f"r_{k}"] = v / n
@@ -58,4 +61,4 @@ def format_summary(name, s):
         return f"{name}: no rounds"
     return (f"{name}: {s['rounds']} rounds  win {s['win_rate']:.1%} [{s['win_lo']:.1%}, {s['win_hi']:.1%}]"
             f"  draw {s['draw_rate']:.1%}  loss {s['loss_rate']:.1%}  survival {s['survival']:.1f}s"
-            f"  kills {s['kills']:.2f}  reward {s['reward']:+.3f}")
+            f"  kills {s['kills']:.2f}  turns {s.get('turn_rate', 0):.0%}  reward {s['reward']:+.3f}")

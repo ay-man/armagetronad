@@ -1,6 +1,6 @@
 # Milestone 3: self-play with a pool of earlier versions, plus built-in AI matches
 # so the learner does not forget how to beat a fixed outside opponent.
-# Start from a milestone 1 policy with: --init runs/m1_builtin/checkpoints/latest.pt
+# Start from a milestone 1 policy with: --init runs/m1b_gamma997/checkpoints/ckpt_000360.pt
 
 [run]
 seed = 2
@@ -57,10 +57,14 @@ target_kl = 0.03
 [eval]
 every_updates = 20
 rounds = 200
-opponents = ["builtin", "random"]
+# the last opponent is the frozen policy this run starts from: beating it shows real progress
+opponents = ["builtin", "random", "ckpt:runs/m1b_gamma997/checkpoints/ckpt_000360.pt"]
 greedy = false
 
 [checkpoint]
 every_updates = 10
 pool_every_updates = 10
 pool_size = 30
+# earlier versions to play against from the start
+pool_seed = ["runs/m1b_gamma997/checkpoints/ckpt_000100.pt", "runs/m1b_gamma997/checkpoints/ckpt_000200.pt",
+             "runs/m1b_gamma997/checkpoints/ckpt_000300.pt", "runs/m1b_gamma997/checkpoints/ckpt_000360.pt"]

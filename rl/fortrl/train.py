@@ -17,7 +17,7 @@ import torch
 
 from .arena import Runner
 from .evaluation import evaluate
-from .factory import SnapshotPool, load_config, make_arenas, obs_spec
+from .factory import SnapshotPool, load_config, make_arenas, obs_spec, resolve
 from .policy import PolicyBundle, PolicyController
 from .ppo import PPOConfig, ppo_update
 from .rewards import RewardConfig
@@ -102,6 +102,11 @@ def main(argv=None):
 
     learner = PolicyController(bundle, "learner", learns=True)
     pool = SnapshotPool(run_dir / "pool", max_size=ckpt_cfg.get("pool_size", 20))
+    if not args.resume:
+        for path in ckpt_cfg.get("pool_seed", []):
+            pool.add(PolicyBundle.load(resolve(path)), f"seed_{Path(path).parent.parent.name}_{Path(path).stem}")
+        if ckpt_cfg.get("pool_seed"):
+            log.info("seeded opponent pool with %d snapshots", len(ckpt_cfg["pool_seed"]))
     base_port = cfg.get("game", {}).get("base_port", 4800)
     arenas = make_arenas(cfg, learner, pool, spec, base_port, seed + state["update"])
     runner = Runner(arenas, spec, reward_cfg)

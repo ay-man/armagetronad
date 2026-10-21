@@ -40,6 +40,8 @@ class AgentState:
     breakdown: RewardBreakdown = field(default_factory=RewardBreakdown)
     alive: bool = True
     steps: int = 0
+    turns: int = 0
+    brakes: int = 0
     start_time: float = 0.0
     death_time: float = None
     kills: int = 0
@@ -155,6 +157,8 @@ class Runner:
             for (idx, st, o), a_, lp, v in zip(group, act, logp, value):
                 st.pending = Transition(o, int(a_), float(lp), float(v))
                 st.steps += 1
+                st.turns += ACTIONS[int(a_)][0] != 0
+                st.brakes += ACTIONS[int(a_)][1] != 0
                 replies[idx][st.pid] = ACTIONS[int(a_)]
         self.total_steps += len(acting)
         for idx, actions in replies.items():
@@ -218,7 +222,8 @@ class Runner:
         self.records.append({
             "arena": arena.name, "round": arena.round, "team": st.team, "controller": st.controller.name,
             "opponent": "+".join(opponents), "result": result, "reward": st.breakdown.total,
-            "parts": dict(st.breakdown.parts), "steps": st.steps, "kills": st.kills,
+            "parts": dict(st.breakdown.parts), "steps": st.steps, "turns": st.turns,
+            "brakes": st.brakes, "kills": st.kills,
             "died": st.death_time is not None,
             "survival": (end - st.start_time) if end is not None else None,
         })
