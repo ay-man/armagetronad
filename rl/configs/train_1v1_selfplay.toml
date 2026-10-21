@@ -1,5 +1,7 @@
 # Milestone 3: self-play with a pool of earlier versions, plus built-in AI matches
 # so the learner does not forget how to beat a fixed outside opponent.
+# With 1 built-in arena to 2 league arenas, run m3_league won 100% against its starting
+# policy but slid from 93% to 72% against the built-in AI; hence 2 to 2 and more pool play.
 # Start from a milestone 1 policy with: --init runs/m1b_gamma997/checkpoints/ckpt_000360.pt
 
 [run]
@@ -13,7 +15,7 @@ base_port = 4820
 
 [[arenas]]
 name = "builtin"
-count = 1
+count = 2
 steered_teams = 1
 opponents = { builtin = 1.0 }
 
@@ -21,7 +23,7 @@ opponents = { builtin = 1.0 }
 name = "league"
 count = 2
 steered_teams = 2           # both teams steered from Python, learner takes a random side
-opponents = { self = 0.4, pool = 0.5, random = 0.1 }
+opponents = { self = 0.3, pool = 0.6, random = 0.1 }
 
 [obs]
 rays = 16

@@ -14,14 +14,14 @@ import logging
 from pathlib import Path
 
 from .arena import Arena, Runner
-from .factory import load_config, obs_spec, start_server
+from .factory import fixed_opponent, load_config, obs_spec, start_server
 from .policy import PolicyBundle, PolicyController, RandomController
 from .rewards import RewardConfig
 
 KEEP_EVENTS = ("DEATH_", "BASEZONE_", "ROUND_WINNER")
 
 
-def record_policy(cfg, policy, rounds, port, greedy=False):
+def record_policy(cfg, policy, rounds, port, greedy=False, opponent="builtin", label="", opponent_label=""):
     if policy in ("random", "builtin"):
         controller, spec = RandomController(), obs_spec(cfg)
         controller.name = "policy"
@@ -30,8 +30,16 @@ def record_policy(cfg, policy, rounds, port, greedy=False):
         controller, spec = PolicyController(bundle, "policy", greedy=greedy), bundle.spec
 
     # with 'builtin' nothing is steered: the game's AI drives both teams
-    server = start_server(cfg, 0 if policy == "builtin" else 1, port, spec)
-    arena = Arena(server, "record", lambda r: {0: controller})
+    if opponent == "builtin":
+        server = start_server(cfg, 0 if policy == "builtin" else 1, port, spec)
+        arena = Arena(server, "record", lambda r: {0: controller})
+        team_labels = ["built-in AI" if policy == "builtin" else label or "learning bot", "built-in AI"]
+    else:
+        # a frozen checkpoint on team 1; both teams are steered from here
+        server = start_server(cfg, 2, port, spec)
+        other = fixed_opponent(opponent)
+        arena = Arena(server, "record", lambda r: {0: controller, 1: other})
+        team_labels = [label or "learning bot", opponent_label or other.name]
     runner = Runner([arena], spec, RewardConfig.from_dict(cfg.get("reward", {})))
     games = {}
 
@@ -54,6 +62,7 @@ def record_policy(cfg, policy, rounds, port, greedy=False):
             "e": [e for e in msg["events"] if e.startswith(KEEP_EVENTS)],
             "end": msg["type"] == "round_end",
         })
+        game["team_labels"] = team_labels
         if msg["type"] == "round_end":
             game["winner"] = msg["winner"]
 
@@ -86,6 +95,9 @@ def main(argv=None):
     parser.add_argument("--label", action="append", help="display name per --policy")
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--greedy", action="store_true")
+    parser.add_argument("--opponent", default="builtin", help="'builtin' or ckpt:<path> on team 1")
+    parser.add_argument("--opponent-label", default="", help="display name of the opponent team")
+    parser.add_argument("--team-label", action="append", help="display name of team 0 per --policy")
     parser.add_argument("--port", type=int, default=5200)
     parser.add_argument("--arena-size", type=float, default=500, help="edge length of the square arena")
     parser.add_argument("--speed", type=float, default=4, help="default playback speed in the viewer")
@@ -99,7 +111,9 @@ def main(argv=None):
     cfg = load_config(args.config)
     result = []
     for i, (policy, label) in enumerate(zip(args.policy, labels)):
-        games = record_policy(cfg, policy, args.rounds, args.port + i, args.greedy)
+        team_label = args.team_label[i] if args.team_label else ""
+        games = record_policy(cfg, policy, args.rounds, args.port + i, args.greedy, args.opponent, team_label,
+                              args.opponent_label)
         for g in games:
             g["label"] = label
         result += games
