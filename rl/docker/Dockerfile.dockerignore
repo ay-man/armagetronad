@@ -1,0 +1,8 @@
+# context for rl/docker/Dockerfile: sources and rl/, no build output or training runs
+.git
+build
+builds
+dockerbuild
+rl/runs
+**/__pycache__
+**/.pytest_cache

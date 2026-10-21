@@ -1,0 +1,34 @@
+# Several public bot servers on one machine. From the repository root:
+#   docker compose -f rl/deploy/docker-compose.yml up -d --build
+# Each server needs its UDP port open to the internet (AWS: security group inbound rule).
+# Set SERVER_DNS / SERVER_IP below if the machine sits behind NAT, so the master
+# servers list the right address.
+
+x-bot-server: &bot-server
+  build:
+    context: ../..
+    dockerfile: rl/docker/Dockerfile
+  image: fortbots:latest
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options: { max-size: "20m", max-file: "3" }
+
+services:
+  fort6v6-a:
+    <<: *bot-server
+    ports: ["4534:4534/udp"]
+    command: ["fortrl.serve", "--policy", "models/fort_6v6.pt", "--game", "configs/fort_6v6.cfg",
+              "--name", "Fort Bots 6v6 #1", "--port", "4534", "--public"]
+
+  fort6v6-b:
+    <<: *bot-server
+    ports: ["4535:4535/udp"]
+    command: ["fortrl.serve", "--policy", "models/fort_6v6.pt", "--game", "configs/fort_6v6.cfg",
+              "--name", "Fort Bots 6v6 #2", "--port", "4535", "--public"]
+
+  fort1v1:
+    <<: *bot-server
+    ports: ["4536:4536/udp"]
+    command: ["fortrl.serve", "--policy", "models/fort_1v1.pt", "--game", "configs/fort_1v1.cfg",
+              "--name", "Fort Bots 1v1 duel", "--port", "4536", "--public"]

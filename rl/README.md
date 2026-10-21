@@ -129,8 +129,18 @@ All commands from the `rl/` directory.
 
 # milestone 3: self-play league, starting from the milestone 1 bot
 ~/rlvenv/bin/python -m fortrl.train configs/train_1v1_selfplay.toml --run-dir runs/m3_league \
-    --init runs/m1_builtin/checkpoints/latest.pt
+    --init runs/m1b_gamma997/checkpoints/ckpt_000360.pt
+
+# milestone 4: 6 vs 6 teams, starting from the shipped 1 vs 1 model. Its weights are carried
+# over to the bigger observation (3 nearest teammates and enemies) automatically.
+~/rlvenv/bin/python -m fortrl.train configs/train_6v6.toml --run-dir runs/m4_6v6 --init models/fort_1v1.pt
+
+# turn a checkpoint into a small model file for serving or as a starting point
+~/rlvenv/bin/python -m fortrl.export runs/m4_6v6/checkpoints/latest.pt models/fort_6v6.pt --note "6v6 update N"
 ```
+
+Trained models ship in `models/` (`fort_1v1.pt`, `fort_6v6.pt`); each file stores a note on where
+it came from. Running them locally, in Docker or on AWS: [DEPLOY.md](DEPLOY.md).
 
 ### Watch the bots
 
@@ -143,9 +153,10 @@ All commands from the `rl/` directory.
 ~/rlvenv/bin/python -m fortrl.replay_page runs/replays.json --out runs/replays.html \
     --stage "Random play=runs/baseline_random.json" --stage "Latest=runs/m1_builtin:100"
 
-# or watch live with the real game: a real-time server where the policy drives every AI cycle;
-# connect with a normal game client (Multiplayer, Custom Connect, <host>:4534) to spectate or play
-~/rlvenv/bin/python -m fortrl.watch configs/train_1v1_builtin.toml --policy runs/m1_builtin/checkpoints/latest.pt
+# or watch live with the real game: a real-time server where the model drives every AI cycle;
+# connect with a normal game client (Multiplayer, Custom Connect, <host>:4534) to spectate or play.
+# --public lists it in the in-game server browser (see DEPLOY.md for running it on AWS)
+~/rlvenv/bin/python -m fortrl.serve --policy models/fort_6v6.pt --game configs/fort_6v6.cfg --name "My Fort Bots"
 ```
 
 ### What a run directory holds
@@ -169,8 +180,8 @@ checkpoints rises well above the random baseline's interval.
 
 ## Known limitations
 
-- Only 1 vs 1 arenas so far (`OpponentSchedule`); team play needs teammates in the
-  observation config and more steered teams.
+- Team arenas assign one controller per team: all six cycles of a team share one model, and
+  league opponents are whole teams (self, pool snapshot or random).
 - Against the built-in AI the learner always drives team 0 (`RL_BRIDGE_TEAMS` steers the
   lowest team ids), so it always starts from the same spawn on a given map.
 - One map (`for_old_clients`). Generalization across maps is not measured yet.

@@ -156,7 +156,13 @@ def main(argv=None):
 def run_eval(cfg, bundle, spec, state, run_dir, eval_cfg, port):
     controller = PolicyController(bundle, "eval", greedy=eval_cfg.get("greedy", False))
     t0 = time.time()
-    results = evaluate(cfg, controller, eval_cfg.get("opponents", ["builtin", "random"]),
+    opponents = []
+    for opp in eval_cfg.get("opponents", ["builtin", "random"]):
+        if opp.startswith("ckpt:") and not Path(opp[len("ckpt:"):]).exists():
+            log.warning("  skipping evaluation opponent %s: file not found", opp)
+            continue
+        opponents.append(opp)
+    results = evaluate(cfg, controller, opponents,
                        eval_cfg.get("rounds", 100), spec, port, seed=state["update"])
     append_jsonl(run_dir / "eval.jsonl", {"update": state["update"], "steps": state["steps"], "results": results})
     for opp, s in results.items():

@@ -17,12 +17,17 @@ The trainer starts `armagetronad-dedicated` processes with the C++ bridge enable
 .
 ├── README.md            # setup, commands, design rationale
 ├── PROTOCOL.md          # bridge message format
+├── DEPLOY.md            # Docker, local and AWS deployment
 ├── requirements.txt     # Python dependencies
 ├── pytest.ini           # test configuration (run pytest from rl/)
 ├── configs/
 │   ├── fort_1v1.cfg              # game rules for 1 vs 1 Fortress training
 │   ├── train_1v1_builtin.toml    # milestone 1: learner vs built-in AI
-│   └── train_1v1_selfplay.toml   # milestone 3: self-play league
+│   ├── train_1v1_selfplay.toml   # milestone 3: self-play league
+│   ├── train_1v1_selfplay_m3b.toml  # continuation with the rebalanced mix
+│   ├── fort_6v6.cfg              # game rules for 6 vs 6 Fortress
+│   ├── train_6v6.toml            # milestone 4: 6 vs 6 team training
+│   └── watch_6v6.toml            # 6 vs 6 recording / evaluation
 ├── fortrl/
 │   ├── server.py        # launches a server, speaks the protocol
 │   ├── features.py      # egocentric observation encoding, action table, running normalizer
@@ -35,7 +40,14 @@ The trainer starts `armagetronad-dedicated` processes with the C++ bridge enable
 │   ├── stats.py         # win rates with Wilson intervals, round summaries
 │   ├── train.py         # CLI: train / resume
 │   ├── evaluate.py      # CLI: evaluate a checkpoint or the random baseline
+│   ├── record.py        # CLI: record matches for the replay viewer
+│   ├── replay_page.py   # CLI: build the HTML replay/progress page (template replay_viewer.html)
+│   ├── serve.py         # CLI: public real-time bot server
+│   ├── export.py        # CLI: checkpoint -> small model file
 │   └── plot.py          # CLI: progress plots
+├── models/              # shipped trained models (policy only)
+├── docker/              # Dockerfile (build from the repository root) and its context ignore list
+├── deploy/              # docker-compose for several bot servers, EC2 user data
 └── tests/               # pytest unit tests (no game server needed)
 ```
 
