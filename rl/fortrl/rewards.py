@@ -15,6 +15,8 @@ class RewardConfig:
     draw: float = 0.0
     death: float = -0.5
     kill: float = 0.5
+    # a teammate crashed into this cycle's trail
+    teamkill: float = 0.0
     # per unit of conquest progress (0..1) on enemy / own fortress
     enemy_conquest: float = 1.0
     own_conquest: float = -1.0
@@ -84,6 +86,8 @@ def step_reward(cfg, prev, cur, agent, prev_alive, now_alive, out=None):
     for kind, fields in parse_events(cur["events"]):
         if kind == "DEATH_FRAG" and len(fields) >= 2 and fields[1] == name and fields[0] != name:
             out.add("kill", cfg.kill)
+        if kind == "DEATH_TEAMKILL" and len(fields) >= 2 and fields[1] == name and fields[0] != name:
+            out.add("teamkill", cfg.teamkill)
     return out
 
 

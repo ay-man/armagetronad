@@ -60,6 +60,36 @@ class PolicyBundle:
         return bundle
 
     @classmethod
+    def transfer(cls, old, spec):
+        """A bundle for a bigger observation layout that starts out acting exactly like `old`.
+
+        Inputs that exist in both layouts keep their weights and normalizer statistics; new
+        slots (more teammates, more enemies) start with zero input weights, so learning can
+        give them meaning without first destroying the old skills.
+        """
+        if old.spec.rays != spec.rays:
+            raise ValueError("ray count must match to transfer a policy")
+        new = cls(spec, hidden=old.hidden)
+        old_state, new_state = old.model.state_dict(), new.model.state_dict()
+        cols_new, cols_old = [], []
+        for (name, s_new, width, slots_new), (_, s_old, _, slots_old) in zip(spec.layout(), old.spec.layout()):
+            for k in range(min(slots_new, slots_old) * width):
+                cols_new.append(s_new + k)
+                cols_old.append(s_old + k)
+        for key, value in old_state.items():
+            if key in ("actor.0.weight", "critic.0.weight"):
+                w = torch.zeros_like(new_state[key])
+                w[:, cols_new] = value[:, cols_old]
+                new_state[key] = w
+            else:
+                new_state[key] = value.clone()
+        new.model.load_state_dict(new_state)
+        new.norm.mean[cols_new] = old.norm.mean[cols_old]
+        new.norm.var[cols_new] = old.norm.var[cols_old]
+        new.norm.count = old.norm.count
+        return new
+
+    @classmethod
     def load(cls, path):
         state = torch.load(path, map_location="cpu", weights_only=False)
         return cls.from_state_dict(state["policy"] if "policy" in state else state)

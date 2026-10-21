@@ -1,0 +1,67 @@
+# 6 vs 6 Fortress team training. Start from the best 1 vs 1 policy:
+#   --init runs/m3b_league/checkpoints/ckpt_000240.pt
+# Its weights are transferred to the bigger observation (teammates, more enemies).
+
+[run]
+seed = 6
+total_steps = 20_000_000
+torch_threads = 1
+
+[game]
+config = "configs/fort_6v6.cfg"
+base_port = 4900
+
+[[arenas]]
+name = "builtin"
+count = 2
+steered_teams = 1          # six learners on team 0, six built-in AI on team 1
+opponents = { builtin = 1.0 }
+
+[[arenas]]
+name = "league"
+count = 1
+steered_teams = 2          # learners on one side, a team of self/pool/random on the other
+opponents = { self = 0.3, pool = 0.6, random = 0.1 }
+
+[obs]
+rays = 16
+max_enemies = 3            # nearest three of each
+max_mates = 3
+max_own_zones = 1
+max_enemy_zones = 1
+
+[reward]
+win = 1.0
+loss = -1.0
+draw = 0.0
+death = -0.5
+kill = 0.5
+teamkill = -0.5
+enemy_conquest = 1.0
+own_conquest = -1.0
+alive = 0.0
+
+[ppo]
+rollout_steps = 16384
+epochs = 4
+minibatch = 2048
+lr = 2e-4
+gamma = 0.997
+lam = 0.95
+clip = 0.2
+ent_coef = 0.01
+vf_coef = 0.5
+max_grad_norm = 0.5
+hidden = 256
+target_kl = 0.03
+
+[eval]
+every_updates = 10
+rounds = 60                # team rounds (each has 6 learners)
+opponents = ["builtin", "ckpt:runs/m4_6v6_start.pt"]
+greedy = false
+
+[checkpoint]
+every_updates = 10
+pool_every_updates = 10
+pool_size = 30

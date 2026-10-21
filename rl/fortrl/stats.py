@@ -16,8 +16,33 @@ def wilson(successes, n, z=1.96):
     return (max(0.0, center - half), min(1.0, center + half))
 
 
+def merge_teams(records):
+    """One record per team and round: teammates share the result, so counting each cycle
+    separately would overstate how many independent rounds were observed."""
+    groups = {}
+    for r in records:
+        groups.setdefault((r["arena"], r["round"], r["team"], r["controller"]), []).append(r)
+    out = []
+    for rs in groups.values():
+        if len(rs) == 1:
+            out.append(rs[0])
+            continue
+        parts = {}
+        for r in rs:
+            for k, v in r["parts"].items():
+                parts[k] = parts.get(k, 0.0) + v / len(rs)
+        survival = [r["survival"] for r in rs if r["survival"] is not None]
+        out.append({**rs[0], "cycles": len(rs), "parts": parts,
+                    "reward": sum(r["reward"] for r in rs) / len(rs),
+                    "survival": sum(survival) / len(survival) if survival else None,
+                    "died": all(r["died"] for r in rs),
+                    **{k: sum(r.get(k, 0) for r in rs) for k in ("steps", "turns", "brakes", "kills")}})
+    return out
+
+
 def summarize(records):
-    """Win/draw/loss rates, survival, kills and reward parts over decided round records."""
+    """Win/draw/loss rates, survival, kills and reward parts over decided rounds (teams merged)."""
+    records = merge_teams(records)
     aborted = sum(r["result"] == "aborted" for r in records)
     records = [r for r in records if r["result"] != "aborted"]
     n = len(records)
@@ -37,7 +62,8 @@ def summarize(records):
         "loss_rate": losses / n, "draw_rate": draws / n,
         "reward": float(np.mean([r["reward"] for r in records])),
         "survival": float(np.mean(survival)) if survival else 0.0,
-        "death_rate": sum(r["died"] for r in records) / n,
+        "death_rate": sum(r["died"] for r in records) / n,   # whole team dead
+        "cycles": float(np.mean([r.get("cycles", 1) for r in records])),
         "kills": sum(r["kills"] for r in records) / n,
         "steps": float(np.mean([r["steps"] for r in records])),
         # share of decisions that turn / hold the brake (the zig-zag habit)

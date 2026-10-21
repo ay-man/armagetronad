@@ -30,6 +30,17 @@ class ObsSpec:
     speed_scale: float = 30.0
     time_scale: float = 60.0
 
+    def layout(self):
+        """(name, start, slot width, slots) of each block, in vector order."""
+        blocks = [("rays", 1 + len(WALL_TYPES), self.rays), ("self", 7, 1),
+                  ("enemies", 8, self.max_enemies), ("mates", 8, self.max_mates),
+                  ("own_zones", 8, self.max_own_zones), ("enemy_zones", 8, self.max_enemy_zones)]
+        out, start = [], 0
+        for name, width, slots in blocks:
+            out.append((name, start, width, slots))
+            start += width * slots
+        return out
+
     @property
     def size(self):
         return (self.rays * (1 + len(WALL_TYPES)) + 7

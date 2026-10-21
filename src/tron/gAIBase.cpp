@@ -1102,6 +1102,7 @@ nNetObjectDescriptorBase const & gAIPlayer::DoGetDescriptor() const
 //! creates a netobject form sync data
 gAIPlayer::gAIPlayer( Game::AIPlayerSync const & sync, nSenderInfo const & sender ):
         ePlayerNetID(sync.base(), sender ),
+        simpleAI_(NULL),
         character(NULL),
         //	target(NULL),
         lastPath(se_GameTime()-100),

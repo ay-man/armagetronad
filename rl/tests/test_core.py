@@ -121,3 +121,27 @@ def test_wilson_bounds():
     assert lo == 0 and hi < 0.02
     lo, hi = wilson(150, 300)
     assert lo < 0.5 < hi and math.isclose(lo + hi, 1.0, abs_tol=1e-9)
+
+
+def test_transfer_keeps_behaviour_on_shared_inputs():
+    import torch
+    from fortrl.policy import PolicyBundle
+    small, big = ObsSpec(), ObsSpec(max_enemies=3, max_mates=3)
+    old = PolicyBundle(small)
+    old.norm.update(np.random.default_rng(0).normal(size=(50, small.size)))
+    new = PolicyBundle.transfer(old, big)
+    msg = make_msg()
+    msg["cycles"].append({"id": 3, "team": 0, "name": "mate", "alive": 1, "x": 50.0, "y": 60.0,
+                          "dx": 1, "dy": 0, "speed": 20.0, "braking": 0})
+    a = msg["agents"][0]
+    with torch.no_grad():
+        lo = old.model.actor(torch.from_numpy(old.norm(encode(msg, a, small)[None])))
+        ln = new.model.actor(torch.from_numpy(new.norm(encode(msg, a, big)[None])))
+    assert torch.allclose(lo, ln, atol=1e-5)
+
+
+def test_teamkill_penalty_goes_to_trail_owner():
+    cfg = RewardConfig(teamkill=-0.5)
+    prev, cur = make_msg(), make_msg(events=["DEATH_TEAMKILL mate me"])
+    r = step_reward(cfg, prev, cur, {"team": 0, "name": "me"}, True, True)
+    assert r.parts == {"teamkill": -0.5}

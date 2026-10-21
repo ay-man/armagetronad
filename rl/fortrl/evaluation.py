@@ -5,7 +5,7 @@ import logging
 from .arena import Runner
 from .factory import eval_arena
 from .rewards import RewardConfig
-from .stats import summarize
+from .stats import merge_teams, summarize
 
 log = logging.getLogger(__name__)
 
@@ -31,9 +31,11 @@ def evaluate(cfg, controller, opponents, rounds, spec, base_port, seed=0, server
             # overall would over-sample short rounds
             def per_arena(r):
                 out = {a.name: [] for a in arenas}
-                for x in r.records:
-                    if x["controller"] == controller.name and x["result"] != "aborted":
+                for x in merge_teams([x for x in r.records if x["controller"] == controller.name]):
+                    if x["result"] != "aborted":
                         out[x["arena"]].append(x)
+                for v in out.values():
+                    v.sort(key=lambda x: x["round"])
                 return out
 
             runner.run(lambda r: all(len(v) >= per_server for v in per_arena(r).values()))

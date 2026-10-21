@@ -53,9 +53,9 @@ class GameServer:
         vardir = self.workdir / "var"
         cfgdir.mkdir(parents=True, exist_ok=True)
         vardir.mkdir(parents=True, exist_ok=True)
-        sock_path = self.workdir / "bridge.sock"
-        if sock_path.exists():
-            sock_path.unlink()
+        # unix socket paths are limited to ~108 bytes, so never put it under a deep workdir
+        self._sock_dir = Path(tempfile.mkdtemp(prefix="frl"))
+        sock_path = self._sock_dir / "s"
 
         settings = {
             "RL_BRIDGE_SOCKET": str(sock_path),
@@ -109,6 +109,8 @@ class GameServer:
                 self.proc.wait()
             self.proc = None
             self._log_file.close()
+        if getattr(self, "_sock_dir", None):
+            shutil.rmtree(self._sock_dir, ignore_errors=True)
         if self._own_workdir and not self.keep_logs:
             shutil.rmtree(self.workdir, ignore_errors=True)
 

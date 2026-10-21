@@ -86,7 +86,8 @@ def main(argv=None):
     if args.init:
         bundle = PolicyBundle.load(args.init)
         if bundle.spec != spec:
-            raise SystemExit(f"--init policy was trained with {bundle.spec}, config asks for {spec}")
+            log.info("transferring --init policy from %s to %s", bundle.spec, spec)
+            bundle = PolicyBundle.transfer(bundle, spec)
         optimizer = torch.optim.Adam(bundle.model.parameters(), lr=ppo_cfg.lr, eps=1e-5)
         log.info("initialized policy from %s", args.init)
     if args.resume:
